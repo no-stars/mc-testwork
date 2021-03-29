@@ -1,22 +1,23 @@
-const { Sequelize } = require('sequelize');
-const models = require('./models/index.js')
+const Koa = require('koa');
+const bodyParser = require('koa-bodyparser');
 
-const test = async () => {
+const app = new Koa();
+
+const routerRoot = require('./routes/root');
+const routerLessons = require('./routes/lessons');
+
+const errorHandler = async (ctx, next) => {
   try {
-    await models.sequelize.authenticate();
-    console.log('Connection has been established successfully.');
+    await next();
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    ctx.body = error.message || 'При выполнении произошла ошибка';
+    ctx.status = error.status || 500;
   }
 }
 
-const find = async () => {
-  const ls = await models.lesson.findAll({
-    raw: true,
-    include: 'students'
-  });
-  console.log(ls);
-}
+app.use(errorHandler);
+app.use(bodyParser());
+app.use(routerRoot.routes());
+app.use(routerLessons.routes());
 
-test()
-find()
+app.listen(5000, () => console.log('App is running on port 5000'));
